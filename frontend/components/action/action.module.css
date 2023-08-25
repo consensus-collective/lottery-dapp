@@ -1,6 +1,12 @@
 .container {
-  background-color: yellow;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-evenly;
+  background-color: aliceblue;
+  border-radius:20px;
   width: 100%;
+  height: 800px;
   padding: 2rem 2rem;
   margin: 0 4rem;
 }
