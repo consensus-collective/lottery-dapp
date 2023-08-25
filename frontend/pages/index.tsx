@@ -1,7 +1,7 @@
-import styles from "@/styles/page.module.css";
-
 import Action from "@/components/action";
 import PoolInfo from "@/components/pool-info";
+
+import styles from "@/styles/page.module.css";
 
 export default function Home() {
   return (
