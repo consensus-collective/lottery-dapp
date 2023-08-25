@@ -1,11 +1,11 @@
-import "../styles/globals.css";
-
 import { AppProps } from "next/app";
 import { WagmiConfig, configureChains, createConfig, sepolia } from "wagmi";
 import { ConnectKitProvider, getDefaultConfig } from "connectkit";
 import { alchemyProvider } from "wagmi/providers/alchemy";
 
 import Layout from "@/components/layout";
+
+import "../styles/globals.css";
 
 const { chains } = configureChains(
   [sepolia],

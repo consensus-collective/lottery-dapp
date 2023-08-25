@@ -1,0 +1,13 @@
+.container {
+  margin: 0 2rem;
+}
+
+.container button {
+  padding: 0.5rem 2rem;
+}
+
+.container input {
+  width: 100px;
+  height: 2.2rem;
+  align-content: center;
+}
