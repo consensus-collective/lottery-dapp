@@ -1,6 +1,6 @@
 import { ethers } from "hardhat";
 import * as readline from "readline";
-import { Lottery, LotteryToken, Lottery__factory } from "../typechain-types";
+import { Lottery, LotteryToken } from "../typechain-types";
 import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
 
 let contract: Lottery;
@@ -12,8 +12,8 @@ const BET_FEE = 0.2;
 const TOKEN_RATIO = 1n;
 
 async function main() {
-  await initAccounts();
   await initContracts();
+  await initAccounts();
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
@@ -21,16 +21,23 @@ async function main() {
   mainMenu(rl);
 }
 
-async function initAccounts() {
-  accounts = await ethers.getSigners();
+async function initContracts() {
+  const contractFactory = await ethers.getContractFactory("Lottery");
+  contract = await contractFactory.deploy(
+    "LotteryToken",
+    "LT0",
+    TOKEN_RATIO,
+    ethers.parseUnits(BET_PRICE.toFixed(18)),
+    ethers.parseUnits(BET_FEE.toFixed(18))
+  );
+  await contract.waitForDeployment();
+  const tokenAddress = await contract.paymentToken();
+  const tokenFactory = await ethers.getContractFactory("LotteryToken");
+  token = tokenFactory.attach(tokenAddress) as LotteryToken;
 }
 
-async function initContracts() {
-  const lotteryFactory = await ethers.getContractFactory("Lottery");
-  contract = await lotteryFactory.deploy();
-  await contract.waitForDeployment();
-  const tokenFactory = await ethers.getContractFactory("LotteryToken");
-  token;
+async function initAccounts() {
+  accounts = await ethers.getSigners();
 }
 
 async function mainMenu(rl: readline.Interface) {
@@ -118,7 +125,7 @@ function menuOptions(rl: readline.Interface) {
                     }
                   }
                   mainMenu(rl);
-                },
+                }
               );
             } else {
               mainMenu(rl);
@@ -157,7 +164,7 @@ function menuOptions(rl: readline.Interface) {
         default:
           throw new Error("Invalid option");
       }
-    },
+    }
   );
 }
 
@@ -171,10 +178,10 @@ async function checkState() {
   const closingTime = await contract.betsClosingTime();
   const closingTimeDate = new Date(Number(closingTime) * 1000);
   console.log(
-    `The last block was mined at ${currentBlockDate.toLocaleDateString()} : ${currentBlockDate.toLocaleTimeString()}\n`,
+    `The last block was mined at ${currentBlockDate.toLocaleDateString()} : ${currentBlockDate.toLocaleTimeString()}\n`
   );
   console.log(
-    `lottery should close at ${closingTimeDate.toLocaleDateString()} : ${closingTimeDate.toLocaleTimeString()}\n`,
+    `lottery should close at ${closingTimeDate.toLocaleDateString()} : ${closingTimeDate.toLocaleTimeString()}\n`
   );
 }
 
@@ -188,59 +195,94 @@ async function openBets(duration: string) {
 
 async function displayBalance(index: string) {
   const balanceBN = await ethers.provider.getBalance(
-    accounts[Number(index)].address,
+    accounts[Number(index)].address
   );
   const balance = ethers.formatUnits(balanceBN);
   console.log(
     `The account of address ${
       accounts[Number(index)].address
-    } has ${balance} ETH\n`,
+    } has ${balance} ETH\n`
   );
 }
 
 async function buyTokens(index: string, amount: string) {
-  // TODO
+  const tx = await contract.connect(accounts[Number(index)]).purchaseTokens({
+    value: ethers.parseUnits(amount) / TOKEN_RATIO,
+  });
+  const receipt = await tx.wait();
+  console.log(`Tokens bought (${receipt?.hash})\n`);
 }
 
 async function displayTokenBalance(index: string) {
-  const balanceBN = await ethers.provider.getBalance(
-    accounts[Number(index)].address,
-  );
+  const balanceBN = await token.balanceOf(accounts[Number(index)].address);
   const balance = ethers.formatUnits(balanceBN);
   console.log(
     `The account of address ${
       accounts[Number(index)].address
-    } has ${balance} ETH\n`,
+    } has ${balance} LT0\n`
   );
 }
 
 async function bet(index: string, amount: string) {
-  // TODO
+  const contractAddress = await contract.getAddress();
+  const allowTx = await token
+    .connect(accounts[Number(index)])
+    .approve(contractAddress, ethers.MaxUint256);
+  await allowTx.wait();
+  const tx = await contract.connect(accounts[Number(index)]).betMany(amount);
+  const receipt = await tx.wait();
+  console.log(`Bets placed (${receipt?.hash})\n`);
 }
 
 async function closeLottery() {
-  // TODO
+  const tx = await contract.closeLottery();
+  const receipt = await tx.wait();
+  console.log(`Bets closed (${receipt?.hash})\n`);
 }
 
-async function displayPrize(index: string) {
-  // TODO
-  return "TODO";
+async function displayPrize(index: string): Promise<string> {
+  const prizeBN = await contract.prize(accounts[Number(index)].address);
+  const prize = ethers.formatUnits(prizeBN);
+  console.log(
+    `The account of address ${
+      accounts[Number(index)].address
+    } has earned a prize of ${prize} Tokens\n`
+  );
+  return prize;
 }
 
 async function claimPrize(index: string, amount: string) {
-  // TODO
+  const tx = await contract
+    .connect(accounts[Number(index)])
+    .prizeWithdraw(ethers.parseUnits(amount));
+  const receipt = await tx.wait();
+  console.log(`Prize claimed (${receipt?.hash})\n`);
 }
 
 async function displayOwnerPool() {
-  // TODO
+  const balanceBN = await contract.ownerPool();
+  const balance = ethers.formatUnits(balanceBN);
+  console.log(`The owner pool has (${balance}) Tokens \n`);
 }
 
 async function withdrawTokens(amount: string) {
-  // TODO
+  const tx = await contract.ownerWithdraw(ethers.parseUnits(amount));
+  const receipt = await tx.wait();
+  console.log(`Withdraw confirmed (${receipt?.hash})\n`);
 }
 
 async function burnTokens(index: string, amount: string) {
-  // TODO
+  const contractAddress = await contract.getAddress();
+  const allowTx = await token
+    .connect(accounts[Number(index)])
+    .approve(contractAddress, ethers.MaxUint256);
+  const receiptAllow = await allowTx.wait();
+  console.log(`Allowance confirmed (${receiptAllow?.hash})\n`);
+  const tx = await contract
+    .connect(accounts[Number(index)])
+    .returnTokens(ethers.parseUnits(amount));
+  const receipt = await tx.wait();
+  console.log(`Burn confirmed (${receipt?.hash})\n`);
 }
 
 main().catch((error) => {
