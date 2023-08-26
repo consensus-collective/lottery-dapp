@@ -27,7 +27,7 @@ export default function Action() {
       <div className={styles.bets_container}>
         <div className={styles.bets}>
           <BuyToken onChangeMessage={onChangeMessage} />
-          <PlaceBets />
+          <PlaceBets onChangeMessage={onChangeMessage} />
         </div>
         <div className={styles.message_container}>
           <Message {...data} />
