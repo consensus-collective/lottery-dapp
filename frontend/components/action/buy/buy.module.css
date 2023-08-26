@@ -1,4 +1,7 @@
 .container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   margin: 0 2rem;
 }
 
@@ -8,6 +11,11 @@
 
 .container input {
   width: 100px;
-  height: 2.2rem;
-  align-content: center;
+  height: 1.5rem;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.container p {
+  font-size: small;
 }
