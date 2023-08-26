@@ -28,7 +28,7 @@ async function initContracts() {
     "LT0",
     TOKEN_RATIO,
     ethers.parseUnits(BET_PRICE.toFixed(18)),
-    ethers.parseUnits(BET_FEE.toFixed(18))
+    ethers.parseUnits(BET_FEE.toFixed(18)),
   );
   await contract.waitForDeployment();
   const tokenAddress = await contract.paymentToken();
@@ -125,7 +125,7 @@ function menuOptions(rl: readline.Interface) {
                     }
                   }
                   mainMenu(rl);
-                }
+                },
               );
             } else {
               mainMenu(rl);
@@ -164,7 +164,7 @@ function menuOptions(rl: readline.Interface) {
         default:
           throw new Error("Invalid option");
       }
-    }
+    },
   );
 }
 
@@ -178,10 +178,10 @@ async function checkState() {
   const closingTime = await contract.betsClosingTime();
   const closingTimeDate = new Date(Number(closingTime) * 1000);
   console.log(
-    `The last block was mined at ${currentBlockDate.toLocaleDateString()} : ${currentBlockDate.toLocaleTimeString()}\n`
+    `The last block was mined at ${currentBlockDate.toLocaleDateString()} : ${currentBlockDate.toLocaleTimeString()}\n`,
   );
   console.log(
-    `lottery should close at ${closingTimeDate.toLocaleDateString()} : ${closingTimeDate.toLocaleTimeString()}\n`
+    `lottery should close at ${closingTimeDate.toLocaleDateString()} : ${closingTimeDate.toLocaleTimeString()}\n`,
   );
 }
 
@@ -195,13 +195,13 @@ async function openBets(duration: string) {
 
 async function displayBalance(index: string) {
   const balanceBN = await ethers.provider.getBalance(
-    accounts[Number(index)].address
+    accounts[Number(index)].address,
   );
   const balance = ethers.formatUnits(balanceBN);
   console.log(
     `The account of address ${
       accounts[Number(index)].address
-    } has ${balance} ETH\n`
+    } has ${balance} ETH\n`,
   );
 }
 
@@ -219,7 +219,7 @@ async function displayTokenBalance(index: string) {
   console.log(
     `The account of address ${
       accounts[Number(index)].address
-    } has ${balance} LT0\n`
+    } has ${balance} LT0\n`,
   );
 }
 
@@ -246,7 +246,7 @@ async function displayPrize(index: string): Promise<string> {
   console.log(
     `The account of address ${
       accounts[Number(index)].address
-    } has earned a prize of ${prize} Tokens\n`
+    } has earned a prize of ${prize} Tokens\n`,
   );
   return prize;
 }
