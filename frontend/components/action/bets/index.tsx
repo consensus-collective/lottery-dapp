@@ -1,133 +1,105 @@
 import React, { useEffect, useState } from "react";
-import { useAccount, useNetwork, useContractReads } from "wagmi";
-import { waitForTransaction, writeContract, readContract } from "@wagmi/core";
+import { useAccount } from "wagmi";
+import { readContract } from "@wagmi/core";
+import { useLottery } from "@/hooks/use-lottery.hook";
+import { useToken } from "@/hooks/use-token.hook";
 
 import styles from "./bets.module.css";
 
-import LOTTERY from "@/artifacts/lottery.json";
 import TOKEN from "@/artifacts/token.json";
 
 const LOTTERY_CONTRACT = process.env.NEXT_PUBLIC_LOTTERY_CONTRACT;
 const TOKEN_CONTRACT = process.env.NEXT_PUBLIC_TOKEN_CONTRACT;
 
-interface BetsProps {
-  onChangeMessage: (message: string, status: string, url?: string) => void;
-}
-
-export default function PlaceBets(props: BetsProps) {
-  const { onChangeMessage } = props;
-
+export default function PlaceBets() {
+  const [loadingPage, setLoadingPage] = useState<boolean>(true);
   const [loading, setLoading] = useState<boolean>(false);
   const [approved, setApproved] = useState<boolean>(false);
   const [times, setTimes] = useState<string>("1");
   const [maxTimes, setMaxTimes] = useState<string>("1");
-  const [text, setText] = useState<string>("Approve");
+  const [text, setText] = useState<string>("Loading...");
 
-  const { chain } = useNetwork();
   const { address, isDisconnected } = useAccount();
-  const { data } = useContractReads({
-    contracts: [
-      {
-        address: LOTTERY_CONTRACT as `0x${string}`,
-        abi: LOTTERY.abi as any,
-        functionName: "betPrice",
-        args: [],
-      },
-      {
-        address: LOTTERY_CONTRACT as `0x${string}`,
-        abi: LOTTERY.abi as any,
-        functionName: "betFee",
-        args: [],
-      },
-    ],
-  });
+  const { bet, betMany, betFee, betPrice } = useLottery();
+  const { approve } = useToken();
+
+  const { writeAsync: writeBet } = bet;
+  const { writeAsync: writeBetMany } = betMany;
+  const { writeAsync: writeApprove } = approve;
+
+  useEffect(() => {
+    if (loadingPage) {
+      return setText("Loading...");
+    }
+
+    if (loading) {
+      if (!approved) {
+        setText("Aproving...");
+      } else {
+        setText("Betting...");
+      }
+    } else {
+      if (approved || isDisconnected) {
+        setText("Place Bets");
+      } else {
+        setText("Approve");
+      }
+    }
+  }, [isDisconnected, approved, loading, loadingPage]);
+
+  useEffect(() => {
+    if (isDisconnected || !address) return;
+    setLoadingPage(true);
+    onCheckAllowance(() => {
+      setLoadingPage(false);
+    });
+  }, [isDisconnected, betPrice, address, betFee]);
+
+  const onCheckAllowance = async (cb?: () => void) => {
+    if (!betPrice || !betFee) return;
+    const allowance = await readContract({
+      address: TOKEN_CONTRACT as `0x${string}`,
+      abi: TOKEN.abi as any,
+      functionName: "allowance",
+      args: [address, LOTTERY_CONTRACT],
+    });
+
+    const allowanceBN = allowance as unknown as bigint;
+    const totalBet = betPrice + betFee;
+
+    setApproved(allowanceBN >= totalBet);
+
+    if (allowanceBN >= totalBet) {
+      const maxTimes = (allowance as unknown as bigint) / totalBet;
+
+      setTimes("1");
+      setMaxTimes(maxTimes.toString());
+    }
+
+    cb && cb();
+  };
 
   const betsOnce = async () => {
-    const [betPrice, betFee] = data as any;
-
-    if (betPrice.status !== "success" && betFee.status !== "success") return;
-
     setLoading(true);
 
     try {
-      const { hash } = await writeContract({
-        address: LOTTERY_CONTRACT as `0x${string}`,
-        abi: LOTTERY.abi,
-        functionName: "bet",
-      });
-
-      const { transactionHash } = await waitForTransaction({ hash });
-
-      const explorer = chain?.blockExplorers?.default.url;
-      const message = transactionHash;
-      const status = "success";
-      const url = explorer ? `${explorer}/tx/${transactionHash}` : "";
-
-      onChangeMessage(message, status, url);
-
-      const allowance = await readContract({
-        address: TOKEN_CONTRACT as `0x${string}`,
-        abi: TOKEN.abi as any,
-        functionName: "allowance",
-        args: [address, LOTTERY_CONTRACT],
-      });
-
-      setApproved(allowance >= betPrice.result + betFee.result);
-
-      if (allowance >= betPrice.result + betFee.result) {
-        const amount = betPrice.result + betFee.result;
-        const maxTimes = (allowance as unknown as bigint) / amount;
-
-        setMaxTimes(maxTimes.toString());
-      }
-    } catch (err) {
-      onChangeMessage((err as any).message, "error");
+      await writeBet();
+      await onCheckAllowance();
+    } catch {
+      // ignore
     } finally {
       setLoading(false);
     }
   };
 
   const betsMany = async () => {
-    const [betPrice, betFee] = data as any;
-
-    if (betPrice.status !== "success" && betFee.status !== "success") return;
-
     setLoading(true);
 
     try {
-      const { hash } = await writeContract({
-        address: LOTTERY_CONTRACT as `0x${string}`,
-        abi: LOTTERY.abi,
-        functionName: "betMany",
-        args: [times],
-      });
-
-      const { transactionHash } = await waitForTransaction({ hash });
-
-      const explorer = chain?.blockExplorers?.default.url;
-      const message = transactionHash;
-      const status = "success";
-      const url = explorer ? `${explorer}/tx/${transactionHash}` : "";
-
-      onChangeMessage(message, status, url);
-
-      const allowance = await readContract({
-        address: TOKEN_CONTRACT as `0x${string}`,
-        abi: TOKEN.abi as any,
-        functionName: "allowance",
-        args: [address, LOTTERY_CONTRACT],
-      });
-
-      setApproved(allowance >= betPrice.result + betFee.result);
-
-      if (allowance >= betPrice.result + betFee.result) {
-        const amount = betPrice.result + betFee.result;
-        const maxTimes = (allowance as unknown as bigint) / amount;
-
-        setMaxTimes(maxTimes.toString());
-      }
-    } catch (err) {
-      onChangeMessage((err as any).message, "error");
+      await writeBetMany({ args: [times] });
+      await onCheckAllowance();
+    } catch {
+      // ignore
     } finally {
       setLoading(false);
     }
@@ -142,39 +114,17 @@ export default function PlaceBets(props: BetsProps) {
   };
 
   const onApproved = async () => {
-    const [betPrice, betFee] = data as any;
-
-    if (betPrice.status !== "success" && betFee.status !== "success") return;
+    if (!betPrice || !betFee) return;
 
     setLoading(true);
 
     try {
-      const amount = betPrice.result + betFee.result;
-      const { hash } = await writeContract({
-        address: TOKEN_CONTRACT as `0x${string}`,
-        abi: TOKEN.abi,
-        functionName: "approve",
-        args: [LOTTERY_CONTRACT, amount],
-      });
+      const totalBet = betPrice + betFee;
 
-      await waitForTransaction({ hash });
-
-      const allowance = await readContract({
-        address: TOKEN_CONTRACT as `0x${string}`,
-        abi: TOKEN.abi as any,
-        functionName: "allowance",
-        args: [address, LOTTERY_CONTRACT],
-      });
-
-      setApproved(allowance >= amount);
-
-      if (allowance >= amount) {
-        const maxTimes = (allowance as unknown as bigint) / amount;
-
-        setMaxTimes(maxTimes.toString());
-      }
-    } catch (err) {
-      onChangeMessage((err as any).message, "error");
+      await writeApprove({ args: [LOTTERY_CONTRACT, totalBet] });
+      await onCheckAllowance();
+    } catch {
+      // ignore
     } finally {
       setLoading(false);
     }
@@ -190,40 +140,6 @@ export default function PlaceBets(props: BetsProps) {
     setTimes(amount);
   };
 
-  useEffect(() => {
-    if (loading) {
-      if (!approved) {
-        setText("Aproving...");
-      } else {
-        setText("Betting...");
-      }
-    } else {
-      if (approved || isDisconnected) {
-        setText("Place Bets");
-      } else {
-        setText("Approve");
-      }
-    }
-  }, [isDisconnected, approved, loading]);
-
-  useEffect(() => {
-    if (isDisconnected) return;
-    const [betPrice, betFee] = data as any;
-    if (betPrice.status !== "success" && betFee.status !== "success") return;
-    readContract({
-      address: TOKEN_CONTRACT as `0x${string}`,
-      abi: TOKEN.abi as any,
-      functionName: "allowance",
-      args: [address, LOTTERY_CONTRACT] as any,
-    }).then((allowance) => {
-      const amount = betPrice.result + betFee.result;
-      const maxTimes = (allowance as unknown as bigint) / amount;
-
-      setMaxTimes(maxTimes.toString());
-      setApproved(allowance >= betPrice.result + betFee.result);
-    });
-  }, [isDisconnected, data]);
-
   return (
     <div className={styles.container}>
       {approved && (
@@ -234,7 +150,7 @@ export default function PlaceBets(props: BetsProps) {
       )}
 
       <button
-        disabled={loading || isDisconnected || +times <= 0}
+        disabled={loading || isDisconnected || +times <= 0 || loadingPage}
         onClick={approved ? onPlaceBets : onApproved}
       >
         {text}

@@ -1,51 +1,30 @@
 import { useState } from "react";
-import { useAccount, useNetwork } from "wagmi";
+import { useAccount } from "wagmi";
 import { parseEther } from "viem";
-import { waitForTransaction, writeContract } from "@wagmi/core";
+import { useLottery } from "@/hooks/use-lottery.hook";
 
 import styles from "./buy.module.css";
 
-import LOTTERY from "@/artifacts/lottery.json";
-
-const LOTTERY_CONTRACT = process.env.NEXT_PUBLIC_LOTTERY_CONTRACT;
-
-interface BuyTokenProps {
-  onChangeMessage: (message: string, status: string, url?: string) => void;
-}
-
-export function BuyToken(props: BuyTokenProps) {
-  const { onChangeMessage } = props;
-
+export function BuyToken() {
   const [amount, setAmount] = useState<`${number}`>("0");
   const [loading, setLoading] = useState<boolean>(false);
 
-  const { chain } = useNetwork();
   const { isDisconnected } = useAccount();
+  const { purchaseTokens } = useLottery();
+
+  const { writeAsync } = purchaseTokens;
 
   const onBuyToken = async () => {
     setLoading(true);
 
-    const amountBN = parseEther(amount);
-
     try {
-      const { hash } = await writeContract({
-        address: LOTTERY_CONTRACT as `0x${string}`,
-        abi: LOTTERY.abi,
-        functionName: "purchaseTokens",
-        value: amountBN as any,
-      });
+      const amountBN = parseEther(amount);
 
-      const { transactionHash } = await waitForTransaction({ hash });
+      await writeAsync({ value: amountBN });
 
-      const explorer = chain?.blockExplorers?.default.url;
-      const message = transactionHash;
-      const status = "success";
-      const url = explorer ? `${explorer}/tx/${transactionHash}` : "";
-
-      onChangeMessage(message, status, url);
       setAmount("0");
-    } catch (err) {
-      onChangeMessage((err as any).message, "error");
+    } catch {
+      // ignore
     } finally {
       setLoading(false);
     }
