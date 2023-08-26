@@ -9,14 +9,15 @@ import "../styles/globals.css";
 
 const { chains } = configureChains(
   [sepolia],
-  [alchemyProvider({ apiKey: process.env.ALCHEMY_API_KEY ?? "" })],
+  [alchemyProvider({ apiKey: process.env.NEXT_PUBLIC_ALCHEMY_API_KEY ?? "" })],
 );
 
 const config = createConfig(
   getDefaultConfig({
     // Required API Keys
-    alchemyId: process.env.ALCHEMY_API_KEY, // or infuraId
-    walletConnectProjectId: process.env.WALLET_CONNECT_PROJECT_ID ?? "",
+    alchemyId: process.env.NEXT_PUBLIC_ALCHEMY_API_KEY, // or infuraId
+    walletConnectProjectId:
+      process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID ?? "",
 
     // Required
     appName: "Web3 Dapp Template",
