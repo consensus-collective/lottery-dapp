@@ -1,7 +1,9 @@
-import PlaceBets from "./bets";
 import BuyToken from "./buy";
 
+import dynamic from "next/dynamic";
 import styles from "./action.module.css";
+
+const PlaceBets = dynamic(() => import("./bets"), { ssr: false });
 
 export default function Action() {
   return (
