@@ -34,6 +34,7 @@ export function BuyToken(props: BuyTokenProps) {
         functionName: "purchaseTokens",
         value: amountBN as any,
       });
+
       const { transactionHash } = await waitForTransaction({ hash });
 
       const explorer = chain?.blockExplorers?.default.url;
@@ -65,7 +66,7 @@ export function BuyToken(props: BuyTokenProps) {
       <p>ETH Amount:</p>
       <input value={amount} onChange={onChangeAmount} />
       <button disabled={loading || isDisconnected} onClick={onBuyToken}>
-        {loading ? "Loading..." : "Buy Token"}
+        {loading ? "Buying..." : "Buy Token"}
       </button>
     </div>
   );
@@ -78,9 +79,6 @@ function validateNumber(value: string): string {
   }
 
   const values = value.split(".");
-  if (values.length > 2) {
-    return "";
-  }
 
   values[0] = Number(values[0]).toString();
   if (values[0].length > 3) {
