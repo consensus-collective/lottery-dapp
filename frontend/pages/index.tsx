@@ -9,9 +9,9 @@ export default function Home() {
       <header className={styles.header_container}>
         <div className={styles.header}>
           <h1>
-            Lottery<span>-dapp</span>
+            create<span>-web3-dapp</span>
           </h1>
-          <h3>Group 6 Week 5</h3>
+          <h3>The ultimate solution to create web3 applications</h3>
         </div>
       </header>
       <div className={styles.body}>
