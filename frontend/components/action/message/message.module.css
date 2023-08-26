@@ -1,0 +1,12 @@
+.explorer_url {
+  color: #0056b3;
+  font-weight: lighter;
+}
+
+.explorer_url:hover {
+  color: crimson;
+}
+
+.error_message {
+  color: crimson;
+}
