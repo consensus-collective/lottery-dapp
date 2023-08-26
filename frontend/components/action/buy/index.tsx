@@ -1,36 +1,56 @@
 import { useState } from "react";
-import { useContractWrite } from "wagmi";
+import { useAccount, useContractWrite, useNetwork } from "wagmi";
 import { parseEther } from "viem";
 
 import styles from "./buy.module.css";
 
+import LOTTERY from "@/artifacts/lottery.json";
+
+const LOTTERY_CONTRACT = process.env.NEXT_PUBLIC_LOTTERY_CONTRACT;
+
 export default function BuyToken() {
-  const [amount, setAmount] = useState<`${number}`>("0")
+  const [amount, setAmount] = useState<`${number}`>("0");
 
-  const { isLoading } = useContractWrite({});
+  const { chain } = useNetwork();
+  const { isDisconnected } = useAccount();
+  const { isLoading, writeAsync } = useContractWrite({
+    address: LOTTERY_CONTRACT as `0x${string}`,
+    abi: LOTTERY.abi,
+    functionName: "purchaseTokens",
+  });
 
-  const onBuyToken = () => {
-    const amountBN = parseEther(amount)
-    console.log(amountBN);
-    console.log("Buy");
+  const onBuyToken = async () => {
+    const amountBN = parseEther(amount);
 
-    setAmount("0")
+    try {
+      const { hash } = await writeAsync({
+        value: amountBN,
+      });
+
+      const explorer = chain?.blockExplorers?.default.url;
+
+      console.log(`${explorer}/tx/${hash}`);
+    } catch (err) {
+      console.log(err);
+    } finally {
+      setAmount("0");
+    }
   };
 
   const onChangeAmount = (event: React.ChangeEvent<HTMLInputElement>) => {
     const value = event.target.value;
-    const amount = validateNumber(value)
+    const amount = validateNumber(value);
     if (!amount) {
-      return
+      return;
     }
 
-    setAmount(amount as `${number}`)
-  }
+    setAmount(amount as `${number}`);
+  };
 
   return (
     <div className={styles.container}>
-      <input value={amount} onChange={onChangeAmount}/>
-      <button disabled={isLoading} onClick={onBuyToken}>
+      <input value={amount} onChange={onChangeAmount} />
+      <button disabled={isLoading || isDisconnected} onClick={onBuyToken}>
         Buy Tokens
       </button>
     </div>
@@ -38,28 +58,28 @@ export default function BuyToken() {
 }
 
 function validateNumber(value: string): string {
-  const regex = new RegExp(/^\d*\.?\d*$/)
+  const regex = new RegExp(/^\d*\.?\d*$/);
   if (!regex.exec(value)) {
-    return ""
+    return "";
   }
 
   const values = value.split(".");
   if (values.length > 2) {
-    return ""
+    return "";
   }
 
   values[0] = Number(values[0]).toString();
   if (values[0].length > 3) {
-    return ""
+    return "";
   }
 
   if (values.length === 1) {
-    return values[0]
+    return values[0];
   }
 
   if (values[1] && values[1].length > 5) {
-    return ""
+    return "";
   }
 
-  return values.join(".")
+  return values.join(".");
 }
