@@ -4,20 +4,36 @@ import { waitForTransaction } from "@wagmi/core";
 import { useSnackbar } from "notistack";
 import LOTTERY from "@/artifacts/lottery.json";
 import { ethers } from 'ethers';
+import { getBlock } from "web3/lib/commonjs/eth.exports";
 
 
 const LOTTERY_CONTRACT = process.env.NEXT_PUBLIC_LOTTERY_CONTRACT;
 
-// Get block timestamp
-// const provider = new ethers.JsonRpcProvider('YOUR_INFURA_PROJECT_URL');
-
+const provider = new ethers.providers.InfuraProvider(
+  "sepolia",
+  process.env.NEXT_PUBLIC_INFURA_API_KEY ?? ""
+);
 
 export function useTimer() {
 
     const [timer, setTimer] = useState<number>(0);
+    const [blockTimestamp, setBlockTimestamp] = useState<number>(0);
 
     const { enqueueSnackbar } = useSnackbar();
     const { chain } = useNetwork();
+
+    // Set block timestamp
+    useEffect(() => {
+      async function getBlockTimestamp() {
+        const blockNumber = await provider.getBlockNumber();
+        const block = await provider.getBlock(blockNumber);
+        const timeStamp = Number(block.timestamp);
+        setBlockTimestamp(timeStamp);
+      }
+      getBlockTimestamp();
+    }, []);
+
+    console.log(blockTimestamp);
 
     const onError = (error: any) => {
         enqueueSnackbar({
@@ -51,8 +67,8 @@ export function useTimer() {
 
       useEffect(() => {
         if (betsclosingTimeData?.data) {
-            const timeRemaining = Number(betsclosingTimeData.data)
-            setTimer(timeRemaining as unknown as number);
+            const timeRemaining = Number(betsclosingTimeData.data) - blockTimestamp;
+            setTimer(timeRemaining > 0 ? timeRemaining : 0);
         }
       }, [betsclosingTimeData]);
     
