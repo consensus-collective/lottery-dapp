@@ -11,7 +11,7 @@ export function Timer() {
         await writeAsync();
     }
 
-    if (timer != 0){
+    if (timer > 0){
         return (
             <div className={styles.container}>
                 <p>Lottery closes in {timer} seconds</p>
@@ -20,11 +20,7 @@ export function Timer() {
     } else {
         return (
             <div className={styles.container}>
-                <button
-                    onClick={onCloseLottery}
-                >
-                    Close Lottery
-                </button>
+                <button onClick={onCloseLottery}>Close Lottery</button>
             </div>
         );
     }
