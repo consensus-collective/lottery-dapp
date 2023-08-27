@@ -4,12 +4,15 @@ import { ConnectKitButton } from "connectkit";
 import styles from "./navbar.module.css";
 import { useAccount, useNetwork, useBalance, useContractRead } from "wagmi";
 
-
 export default function Navbar() {
   return (
     <nav className={styles.navbar}>
       <div className={styles.leftContent}>
-        <a className={styles.button} href="https://github.com/consensus-collective/lottery-dapp" target={"_blank"}>
+        <a
+          className={styles.button}
+          href="https://github.com/consensus-collective/lottery-dapp"
+          target={"_blank"}
+        >
           <p>Github Repository</p>
         </a>
       </div>
@@ -40,22 +43,22 @@ function WalletInfo() {
         <WalletBalance address={address}></WalletBalance>
         <TokenBalance address={address}></TokenBalance>
       </div>
-    )
-  };
+    );
+  }
   if (isConnecting) {
     return (
       <div>
         <p>Loading...</p>
       </div>
-    )
-  };
+    );
+  }
   if (isDisconnected) {
     return (
       <div>
         <p>Connect wallet</p>
       </div>
-    )
-  };
+    );
+  }
 }
 
 function WalletBalance(params: { address: any }) {
@@ -64,13 +67,9 @@ function WalletBalance(params: { address: any }) {
   if (isError) return <div>Error fetching balance</div>;
 
   // Format the ETH balance to show only 3 decimal places; it defaults to showing 18
-  const formattedBalance = data ? parseFloat(data.formatted).toFixed(3) : 'N/A';
+  const formattedBalance = data ? parseFloat(data.formatted).toFixed(3) : "N/A";
 
-  return (
-    <div>
-      ETH Balance: {formattedBalance}
-    </div>
-  );
+  return <div>ETH Balance: {formattedBalance}</div>;
 }
 
 function TokenBalance(params: { address: `0x${string}` }) {
