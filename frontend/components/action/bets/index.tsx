@@ -1,40 +1,32 @@
 import React, { useEffect, useState } from "react";
 import { useAccount } from "wagmi";
-import { readContract } from "@wagmi/core";
-import { useLottery } from "@/hooks/use-lottery.hook";
-import { useToken } from "@/hooks/use-token.hook";
+import { useBet } from "@/hooks/use-bet";
 
 import styles from "./bets.module.css";
 
-import TOKEN from "@/artifacts/token.json";
-
-const LOTTERY_CONTRACT = process.env.NEXT_PUBLIC_LOTTERY_CONTRACT;
-const TOKEN_CONTRACT = process.env.NEXT_PUBLIC_TOKEN_CONTRACT;
-
 export default function PlaceBets() {
-  const [loadingPage, setLoadingPage] = useState<boolean>(true);
   const [loading, setLoading] = useState<boolean>(false);
   const [approved, setApproved] = useState<boolean>(false);
   const [times, setTimes] = useState<string>("1");
   const [maxTimes, setMaxTimes] = useState<string>("1");
-  const [text, setText] = useState<string>("Loading...");
+  const [text, setText] = useState<string>("Place Bets");
 
-  const { address, isDisconnected } = useAccount();
-  const { bet, betMany, betFee, betPrice } = useLottery();
-  const { approve } = useToken();
+  const { address, isDisconnected, isConnecting } = useAccount();
+  const { bet, betMany, betFee, betPrice, approve, checkAllowance } =
+    useBet(address);
 
   const { writeAsync: writeBet } = bet;
   const { writeAsync: writeBetMany } = betMany;
   const { writeAsync: writeApprove } = approve;
 
   useEffect(() => {
-    if (loadingPage) {
-      return setText("Loading...");
+    if (isDisconnected || isConnecting) {
+      return setText("Place Bets");
     }
 
     if (loading) {
       if (!approved) {
-        setText("Aproving...");
+        setText("Approving...");
       } else {
         setText("Betting...");
       }
@@ -45,83 +37,51 @@ export default function PlaceBets() {
         setText("Approve");
       }
     }
-  }, [isDisconnected, approved, loading, loadingPage]);
+  }, [isDisconnected, approved, loading]);
 
   useEffect(() => {
     if (isDisconnected || !address) return;
-    setLoadingPage(true);
-    onCheckAllowance(() => {
-      setLoadingPage(false);
-    });
+    onCheckAllowance();
   }, [isDisconnected, betPrice, address, betFee]);
 
-  const onCheckAllowance = async (cb?: () => void) => {
-    if (!betPrice || !betFee) return;
-    const allowance = await readContract({
-      address: TOKEN_CONTRACT as `0x${string}`,
-      abi: TOKEN.abi as any,
-      functionName: "allowance",
-      args: [address, LOTTERY_CONTRACT],
+  const onCheckAllowance = async () => {
+    await checkAllowance((allowance, totalBet) => {
+      setApproved(allowance >= totalBet);
+
+      if (allowance >= totalBet) {
+        const maxTimes = allowance / totalBet;
+        setTimes("1");
+        setMaxTimes(maxTimes.toString());
+      }
     });
-
-    const allowanceBN = allowance as unknown as bigint;
-    const totalBet = betPrice + betFee;
-
-    setApproved(allowanceBN >= totalBet);
-
-    if (allowanceBN >= totalBet) {
-      const maxTimes = (allowance as unknown as bigint) / totalBet;
-
-      setTimes("1");
-      setMaxTimes(maxTimes.toString());
-    }
-
-    cb && cb();
-  };
-
-  const betsOnce = async () => {
-    setLoading(true);
-
-    try {
-      await writeBet();
-      await onCheckAllowance();
-    } catch {
-      // ignore
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const betsMany = async () => {
-    setLoading(true);
-
-    try {
-      await writeBetMany({ args: [times] });
-      await onCheckAllowance();
-    } catch {
-      // ignore
-    } finally {
-      setLoading(false);
-    }
   };
 
   const onPlaceBets = async () => {
-    if (+times === 1) {
-      await betsOnce();
-    } else {
-      await betsMany();
+    const betTimes = Number(times);
+    if (betTimes <= 0) return;
+
+    setLoading(true);
+
+    try {
+      if (betTimes > 1) {
+        await writeBetMany({ args: [times] });
+      } else {
+        await writeBet();
+      }
+
+      await onCheckAllowance();
+    } catch {
+      // ignore
+    } finally {
+      setLoading(false);
     }
   };
 
   const onApproved = async () => {
-    if (!betPrice || !betFee) return;
-
     setLoading(true);
 
     try {
-      const totalBet = betPrice + betFee;
-
-      await writeApprove({ args: [LOTTERY_CONTRACT, totalBet] });
+      await writeApprove();
       await onCheckAllowance();
     } catch {
       // ignore
@@ -144,13 +104,18 @@ export default function PlaceBets() {
     <div className={styles.container}>
       {approved && (
         <React.Fragment>
-          <p>Max bets: {maxTimes} times</p>
-          <input value={times} onChange={onChangeTimes} />
+          <p>Total bets: </p>
+          <input
+            value={times}
+            onChange={onChangeTimes}
+            disabled={loading || isConnecting}
+          />
+          <p style={{ marginBottom: "20px" }}>Max bets: {maxTimes} times</p>
         </React.Fragment>
       )}
 
       <button
-        disabled={loading || isDisconnected || +times <= 0 || loadingPage}
+        disabled={loading || isDisconnected || +times <= 0 || isConnecting}
         onClick={approved ? onPlaceBets : onApproved}
       >
         {text}

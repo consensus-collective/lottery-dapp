@@ -33,7 +33,7 @@
 
 .leftContent {
   flex-grow: 1;
-  margin-right: 10px; 
+  margin-right: 10px;
 }
 
 .rightContent {
@@ -43,5 +43,5 @@
 }
 
 .balanceContainer {
-  margin-top: 20px; 
+  margin-top: 20px;
 }

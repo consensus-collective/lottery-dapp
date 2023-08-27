@@ -1,28 +1,35 @@
-import { useState } from "react";
-import { useAccount } from "wagmi";
-import { parseEther } from "viem";
-import { useLottery } from "@/hooks/use-lottery.hook";
+import { useEffect, useState } from "react";
+import { useAccount, useBalance } from "wagmi";
+import { formatEther, parseEther } from "viem";
+import { useBuy } from "@/hooks/use-buy.hook";
 
 import styles from "./buy.module.css";
 
 export function BuyToken() {
+  const [ethAmountBN, setEthAmountBN] = useState<bigint>(BigInt(0));
   const [amount, setAmount] = useState<`${number}`>("0");
+  const [ethAmount, setEthAmount] = useState<string>("0");
+  const [disabled, setDisabled] = useState<boolean>(true);
   const [loading, setLoading] = useState<boolean>(false);
 
-  const { isDisconnected } = useAccount();
-  const { purchaseTokens } = useLottery();
-
+  const { address, isDisconnected, isConnecting } = useAccount();
+  const { purchaseTokens, purchaseRatio } = useBuy();
+  const { data } = useBalance({ address });
   const { writeAsync } = purchaseTokens;
+
+  useEffect(() => {
+    setDisabled(isConnecting);
+  }, [isConnecting]);
 
   const onBuyToken = async () => {
     setLoading(true);
 
     try {
-      const amountBN = parseEther(amount);
-
-      await writeAsync({ value: amountBN });
+      await writeAsync({ value: ethAmountBN });
 
       setAmount("0");
+      setEthAmountBN(BigInt(0));
+      setEthAmount("0");
     } catch {
       // ignore
     } finally {
@@ -31,21 +38,38 @@ export function BuyToken() {
   };
 
   const onChangeAmount = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!data) return;
     const value = event.target.value;
-    const amount = validateNumber(value);
-    if (!amount) {
+    const tokenAmount = validateNumber(value);
+    if (!tokenAmount) {
       return;
     }
 
-    setAmount(amount as `${number}`);
+    const tokenAmountBN = parseEther(tokenAmount as `${number}`);
+    const ethAmountBN = tokenAmountBN / purchaseRatio;
+    if (ethAmountBN > data.value) {
+      return;
+    }
+
+    setEthAmountBN(ethAmountBN);
+    setEthAmount(formatEther(ethAmountBN));
+    setAmount(tokenAmount as `${number}`);
   };
 
   return (
     <div className={styles.container}>
-      <p>ETH Amount:</p>
-      <input value={amount} onChange={onChangeAmount} />
-      <button disabled={loading || isDisconnected} onClick={onBuyToken}>
-        {loading ? "Buying..." : "Buy Token"}
+      <p>Token amount:</p>
+      <input
+        value={amount}
+        onChange={onChangeAmount}
+        disabled={loading || isDisconnected || disabled}
+      />
+      <p style={{ marginBottom: "20px" }}>Price: {ethAmount} ETH</p>
+      <button
+        disabled={loading || isDisconnected || disabled}
+        onClick={onBuyToken}
+      >
+        {loading ? "Purchasing..." : `Purchase Token`}
       </button>
     </div>
   );
@@ -58,14 +82,8 @@ function validateNumber(value: string): string {
   }
 
   const values = value.split(".");
-
-  values[0] = Number(values[0]).toString();
-  if (values[0].length > 3) {
-    return "";
-  }
-
   if (values.length === 1) {
-    return values[0];
+    return Number(values[0]).toString();
   }
 
   if (values[1] && values[1].length > 5) {
