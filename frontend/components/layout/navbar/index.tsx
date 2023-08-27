@@ -1,8 +1,13 @@
 "use client";
 
+import React from "react";
 import { ConnectKitButton } from "connectkit";
+import { useAccount, useBalance, useContractRead } from "wagmi";
+import { formatEther } from "viem";
+
 import styles from "./navbar.module.css";
-import { useAccount, useNetwork, useBalance, useContractRead } from "wagmi";
+
+const TOKEN_CONTRACT = process.env.NEXT_PUBLIC_TOKEN_CONTRACT;
 
 export default function Navbar() {
   return (
@@ -19,23 +24,15 @@ export default function Navbar() {
       <div className={styles.rightContent}>
         <ConnectKitButton />
         <div className={styles.balanceContainer}>
-          <PageBody></PageBody>
+          <WalletInfo />
         </div>
       </div>
     </nav>
   );
 }
 
-function PageBody() {
-  return (
-    <div>
-      <WalletInfo></WalletInfo>
-    </div>
-  );
-}
-
 function WalletInfo() {
-  const { address, isConnecting, isDisconnected } = useAccount();
+  const { address } = useAccount();
 
   if (address) {
     return (
@@ -45,20 +42,8 @@ function WalletInfo() {
       </div>
     );
   }
-  if (isConnecting) {
-    return (
-      <div>
-        <p>Loading...</p>
-      </div>
-    );
-  }
-  if (isDisconnected) {
-    return (
-      <div>
-        <p>Connect wallet</p>
-      </div>
-    );
-  }
+
+  return <React.Fragment />;
 }
 
 function WalletBalance(params: { address: any }) {
@@ -74,7 +59,7 @@ function WalletBalance(params: { address: any }) {
 
 function TokenBalance(params: { address: `0x${string}` }) {
   const { data, isError, isLoading } = useContractRead({
-    address: "0x1Ea03621FaeAE28cB6c896C78E56138f9436cCF2",
+    address: TOKEN_CONTRACT as `0x${string}`,
     abi: [
       {
         constant: true,
@@ -99,7 +84,7 @@ function TokenBalance(params: { address: `0x${string}` }) {
     functionName: "balanceOf",
     args: [params.address],
   });
-  const balance = typeof data === "number" ? data : 0;
+  const balance = typeof data === "bigint" ? formatEther(data) : "0";
   if (isLoading) return <div>Fetching balance…</div>;
   if (isError) return <div>Error fetching balance</div>;
   return <div>Token Balance: {balance}</div>;
