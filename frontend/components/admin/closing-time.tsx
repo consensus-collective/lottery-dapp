@@ -53,7 +53,7 @@ export function ClosingTime(props: Props) {
       </ShowIf>
       <ShowIf condition={enabled || (state && blockTimestamp > closingTime)}>
         <button disabled={loading} onClick={onCloseBet}>
-          Close
+          {loading ? "Closing..." : "Close"}
         </button>
       </ShowIf>
       <ShowIf condition={!state && blockTimestamp > closingTime}>

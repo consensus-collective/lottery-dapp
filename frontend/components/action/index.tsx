@@ -1,26 +1,18 @@
 import { BuyToken } from "./buy";
 import { Timer } from "./timer";
-import { useAccount, useContractRead } from "wagmi";
+import { useAccount } from "wagmi";
+import { useLottery } from "@/hooks/use-lottery.hook";
 
 import ShowIf from "../common/show-if";
 
 import dynamic from "next/dynamic";
 import styles from "./action.module.css";
 
-import LOTTERY from "@/artifacts/lottery.json";
-
-const LOTTERY_CONTRACT = process.env.NEXT_PUBLIC_LOTTERY_CONTRACT;
-
 const PlaceBets = dynamic(() => import("./bets"), { ssr: false });
 
 export default function Action() {
   const { isDisconnected } = useAccount();
-  const { data } = useContractRead({
-    address: LOTTERY_CONTRACT as `0x${string}`,
-    abi: LOTTERY.abi,
-    functionName: "betsOpen",
-    args: [],
-  });
+  const { betsOpen } = useLottery();
 
   return (
     <div className={styles.container}>
@@ -29,7 +21,7 @@ export default function Action() {
       </div>
       <div className={styles.bets_container}>
         <BuyToken />
-        <ShowIf condition={Boolean(data) || isDisconnected}>
+        <ShowIf condition={betsOpen || isDisconnected}>
           <PlaceBets />
         </ShowIf>
       </div>
