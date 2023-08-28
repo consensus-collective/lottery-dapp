@@ -7,6 +7,7 @@ import {
 import { useEffect, useState } from "react";
 import { waitForTransaction } from "@wagmi/core";
 import { useSnackbar } from "notistack";
+import { ExplorerURL } from "@/components/common/explorer-url";
 
 import LOTTERY from "@/artifacts/lottery.json";
 
@@ -46,9 +47,9 @@ export function useTimer() {
     const url = `${explorer}/tx/${transactionHash}`;
 
     enqueueSnackbar({
-      variant: "transactionHash",
-      message: url,
-      hash: hash,
+      message: "TransactionSucceed",
+      variant: "success",
+      action: (id) => ExplorerURL({ href: url, snackbarId: id }),
     });
   };
 

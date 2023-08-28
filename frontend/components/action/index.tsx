@@ -2,6 +2,7 @@ import { BuyToken } from "./buy";
 import { Timer } from "./timer";
 import { useAccount } from "wagmi";
 import { useLottery } from "@/hooks/use-lottery.hook";
+import { useToken } from "@/hooks/use-token.hook";
 
 import ShowIf from "../common/show-if";
 
@@ -12,7 +13,8 @@ const PlaceBets = dynamic(() => import("./bets"), { ssr: false });
 
 export default function Action() {
   const { isDisconnected } = useAccount();
-  const { betsOpen } = useLottery();
+  const { contract, betsOpen } = useLottery();
+  const { balance } = useToken(contract);
 
   return (
     <div className={styles.container}>
@@ -21,7 +23,7 @@ export default function Action() {
       </div>
       <div className={styles.bets_container}>
         <BuyToken />
-        <ShowIf condition={betsOpen || isDisconnected}>
+        <ShowIf condition={(betsOpen && balance > 0) || isDisconnected}>
           <PlaceBets />
         </ShowIf>
       </div>

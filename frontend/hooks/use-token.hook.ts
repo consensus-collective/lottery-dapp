@@ -6,6 +6,7 @@ import {
 } from "wagmi";
 import { useSnackbar } from "notistack";
 import { waitForTransaction } from "@wagmi/core";
+import { ExplorerURL } from "@/components/common/explorer-url";
 
 import TOKEN from "@/artifacts/token.json";
 
@@ -36,9 +37,9 @@ export function useToken(spender?: string) {
     const url = `${explorer}/tx/${transactionHash}`;
 
     enqueueSnackbar({
-      variant: "transactionHash",
-      message: url,
-      hash: hash,
+      message: "TransactionSucceed",
+      variant: "success",
+      action: (id) => ExplorerURL({ href: url, snackbarId: id }),
     });
   };
 

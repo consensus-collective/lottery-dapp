@@ -4,7 +4,6 @@ import { ConnectKitProvider, getDefaultConfig } from "connectkit";
 import { alchemyProvider } from "wagmi/providers/alchemy";
 import { SnackbarProvider } from "notistack";
 
-import TransactionHash from "@/components/action/transaction-hash";
 import Layout from "@/components/layout";
 
 import "../styles/globals.css";
@@ -32,14 +31,6 @@ const config = createConfig(
   }),
 );
 
-declare module "notistack" {
-  interface VariantOverrides {
-    transactionHash: {
-      hash: string;
-    };
-  }
-}
-
 const App = (props: AppProps) => {
   const { Component, pageProps } = props;
 
@@ -49,9 +40,6 @@ const App = (props: AppProps) => {
         <SnackbarProvider
           maxSnack={3}
           anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-          Components={{
-            transactionHash: TransactionHash,
-          }}
         >
           <Layout>
             <Component {...pageProps}></Component>

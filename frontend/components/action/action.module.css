@@ -24,16 +24,6 @@
   text-align: center;
 }
 
-.explorer_url {
-  color: whitesmoke;
-}
-
-.transaction_hash {
-  background-color: #43a047;
-  padding: 16px 20px;
-  border-radius: 4px;
-}
-
 .time_container {
   display: flex;
   flex-direction: column;

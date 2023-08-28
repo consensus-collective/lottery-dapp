@@ -1,0 +1,18 @@
+.detail {
+  padding: 10px;
+  color: rgb(147, 198, 248);
+}
+
+.detail:hover {
+  background-color: rgba(147, 198, 248, 0.254);
+}
+
+.dismiss {
+  padding: 10px;
+  cursor: pointer;
+  color: rgb(255, 174, 190);
+}
+
+.dismiss:hover {
+  background-color: rgba(255, 174, 190, 0.254);
+}
