@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import { useSnackbar } from "notistack";
 import { useContractRead, useContractWrite, useNetwork } from "wagmi";
 import { waitForTransaction } from "@wagmi/core";
@@ -7,9 +6,11 @@ import LOTTERY from "@/artifacts/lottery.json";
 
 const LOTTERY_CONTRACT = process.env.NEXT_PUBLIC_LOTTERY_CONTRACT;
 
-export function useBuy() {
-  const [ratio, setRatio] = useState<bigint>(BigInt(1));
+interface ContractData {
+  data?: bigint;
+}
 
+export function useBuy() {
   const { enqueueSnackbar } = useSnackbar();
   const { chain } = useNetwork();
 
@@ -48,16 +49,11 @@ export function useBuy() {
     abi: LOTTERY.abi as any,
     functionName: "purchaseRatio",
     args: [],
+    watch: true,
   });
-
-  useEffect(() => {
-    if (purchaseRatio?.data) {
-      setRatio(purchaseRatio?.data as unknown as bigint);
-    }
-  }, [purchaseRatio]);
 
   return {
     purchaseTokens,
-    purchaseRatio: ratio,
+    purchaseRatio: (purchaseRatio as ContractData)?.data ?? BigInt(1),
   };
 }

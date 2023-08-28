@@ -5,7 +5,7 @@ import {
   useNetwork,
 } from "wagmi";
 import { useSnackbar } from "notistack";
-import { waitForTransaction, readContract } from "@wagmi/core";
+import { waitForTransaction } from "@wagmi/core";
 
 import TOKEN from "@/artifacts/token.json";
 import LOTTERY from "@/artifacts/lottery.json";

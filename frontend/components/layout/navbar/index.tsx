@@ -47,7 +47,11 @@ function WalletInfo() {
 }
 
 function WalletBalance(params: { address: any }) {
-  const { data, isError, isLoading } = useBalance({ address: params.address });
+  const { data, isError, isLoading } = useBalance({
+    address: params.address,
+    watch: true,
+  });
+
   if (isLoading) return <div>Fetching Balance....</div>;
   if (isError) return <div>Error fetching balance</div>;
 
@@ -83,6 +87,7 @@ function TokenBalance(params: { address: `0x${string}` }) {
     ],
     functionName: "balanceOf",
     args: [params.address],
+    watch: true,
   });
   const balance = typeof data === "bigint" ? formatEther(data) : "0";
   if (isLoading) return <div>Fetching balance…</div>;

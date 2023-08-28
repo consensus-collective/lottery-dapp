@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useAdmin } from "@/hooks/use-admin.hook";
 import { LotteryState } from "./lottery-state";
 import { ClosingTime } from "./closing-time";
