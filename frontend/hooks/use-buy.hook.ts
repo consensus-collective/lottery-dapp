@@ -17,7 +17,6 @@ export function useBuy() {
     enqueueSnackbar({
       variant: "error",
       message: error.name,
-      autoHideDuration: 5000,
     });
   };
 
@@ -33,7 +32,6 @@ export function useBuy() {
       variant: "transactionHash",
       message: url,
       hash: hash,
-      autoHideDuration: 5000,
     });
   };
 

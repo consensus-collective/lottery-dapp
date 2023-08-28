@@ -47,6 +47,7 @@ const App = (props: AppProps) => {
     <WagmiConfig config={config}>
       <ConnectKitProvider>
         <SnackbarProvider
+          maxSnack={3}
           anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
           Components={{
             transactionHash: TransactionHash,

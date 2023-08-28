@@ -20,7 +20,6 @@ export function useBet(address?: string) {
     enqueueSnackbar({
       variant: "error",
       message: error.name,
-      autoHideDuration: 5000,
     });
   };
 
@@ -36,7 +35,6 @@ export function useBet(address?: string) {
       variant: "transactionHash",
       message: url,
       hash: hash,
-      autoHideDuration: 5000,
     });
   };
 
