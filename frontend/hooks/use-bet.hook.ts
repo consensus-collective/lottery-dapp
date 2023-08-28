@@ -1,6 +1,6 @@
 import { useContractRead, useContractWrite, useNetwork } from "wagmi";
 import { useSnackbar } from "notistack";
-import { waitForTransaction, readContract } from "@wagmi/core";
+import { waitForTransaction } from "@wagmi/core";
 
 import TOKEN from "@/artifacts/token.json";
 import LOTTERY from "@/artifacts/lottery.json";
@@ -14,7 +14,7 @@ interface ContractData {
 }
 
 export function useBet(address?: string) {
-  const [totalBet, setTotalBet] = useState<bigint>(BigInt(1));
+  const [totalBet, setTotalBet] = useState<bigint>(BigInt(0));
 
   const { enqueueSnackbar } = useSnackbar();
   const { chain } = useNetwork();
@@ -90,23 +90,6 @@ export function useBet(address?: string) {
     onSuccess,
   });
 
-  const checkAllowance = async (
-    cb?: (allowance: bigint, totalBet: bigint) => void,
-  ) => {
-    if (!betPrice || !betFee) return;
-    if (!address) return;
-    const allowance = await readContract({
-      address: TOKEN_CONTRACT as `0x${string}`,
-      abi: TOKEN.abi as any,
-      functionName: "allowance",
-      args: [address, LOTTERY_CONTRACT],
-    });
-
-    const allowanceBN = allowance as unknown as bigint;
-
-    if (cb) cb(allowanceBN, totalBet);
-  };
-
   const allowance = useContractRead({
     address: TOKEN_CONTRACT as `0x${string}`,
     abi: TOKEN.abi as any,
@@ -128,7 +111,6 @@ export function useBet(address?: string) {
     betMany,
     approve,
     totalBet,
-    checkAllowance,
     allowance: (allowance as ContractData)?.data ?? BigInt(0),
   };
 }
