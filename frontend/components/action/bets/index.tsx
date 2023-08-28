@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useAccount } from "wagmi";
-import { useBet } from "@/hooks/use-bet";
+import { useBet } from "@/hooks/use-bet.hook";
 
 import styles from "./bets.module.css";
 
@@ -37,7 +37,7 @@ export default function PlaceBets() {
         setText("Approve");
       }
     }
-  }, [isDisconnected, approved, loading]);
+  }, [isDisconnected, approved, loading, isConnecting]);
 
   useEffect(() => {
     if (isDisconnected || !address) return;
