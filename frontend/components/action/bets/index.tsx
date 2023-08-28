@@ -2,65 +2,38 @@ import React, { useEffect, useState } from "react";
 import { useAccount } from "wagmi";
 import { useBet } from "@/hooks/use-bet.hook";
 
+import ShowIf from "@/components/common/show-if";
+
 import styles from "./bets.module.css";
 
 export default function PlaceBets() {
-  const [loading, setLoading] = useState<boolean>(false);
+  const [loadingBet, setLoadingBet] = useState<boolean>(false);
+  const [loadingApprove, setLoadingApprove] = useState<boolean>(false);
   const [approved, setApproved] = useState<boolean>(false);
   const [times, setTimes] = useState<string>("1");
   const [maxTimes, setMaxTimes] = useState<string>("1");
-  const [text, setText] = useState<string>("Place Bets");
 
-  const { address, isDisconnected, isConnecting } = useAccount();
-  const { bet, betMany, betFee, betPrice, approve, checkAllowance } =
-    useBet(address);
+  const { address, isDisconnected, isConnecting, isConnected } = useAccount();
+  const { bet, betMany, allowance, approve, totalBet } = useBet(address);
 
   const { writeAsync: writeBet } = bet;
   const { writeAsync: writeBetMany } = betMany;
   const { writeAsync: writeApprove } = approve;
 
-  useEffect(() => {
-    if (isDisconnected || isConnecting) {
-      return setText("Place Bets");
-    }
-
-    if (loading) {
-      if (!approved) {
-        setText("Approving...");
-      } else {
-        setText("Betting...");
-      }
-    } else {
-      if (approved || isDisconnected) {
-        setText("Place Bets");
-      } else {
-        setText("Approve");
-      }
-    }
-  }, [isDisconnected, approved, loading, isConnecting]);
+  const loading = loadingBet || loadingApprove;
 
   useEffect(() => {
-    if (isDisconnected || !address) return;
-    onCheckAllowance();
-  }, [isDisconnected, betPrice, address, betFee]);
-
-  const onCheckAllowance = async () => {
-    await checkAllowance((allowance, totalBet) => {
-      setApproved(allowance >= totalBet);
-
-      if (allowance >= totalBet) {
-        const maxTimes = allowance / totalBet;
-        setTimes("1");
-        setMaxTimes(maxTimes.toString());
-      }
-    });
-  };
+    if (isDisconnected) return;
+    const maxTimes = allowance / totalBet;
+    setApproved(allowance >= totalBet);
+    setMaxTimes(maxTimes.toString());
+  }, [isDisconnected, allowance, totalBet]);
 
   const onPlaceBets = async () => {
     const betTimes = Number(times);
     if (betTimes <= 0) return;
 
-    setLoading(true);
+    setLoadingBet(true);
 
     try {
       if (betTimes > 1) {
@@ -68,25 +41,22 @@ export default function PlaceBets() {
       } else {
         await writeBet();
       }
-
-      await onCheckAllowance();
     } catch {
       // ignore
     } finally {
-      setLoading(false);
+      setLoadingBet(false);
     }
   };
 
   const onApproved = async () => {
-    setLoading(true);
+    setLoadingApprove(true);
 
     try {
       await writeApprove();
-      await onCheckAllowance();
     } catch {
       // ignore
     } finally {
-      setLoading(false);
+      setLoadingApprove(false);
     }
   };
 
@@ -102,23 +72,28 @@ export default function PlaceBets() {
 
   return (
     <div className={styles.container}>
-      {approved && (
-        <React.Fragment>
-          <p>Total bets: </p>
-          <input
-            value={times}
-            onChange={onChangeTimes}
-            disabled={loading || isConnecting}
-          />
-          <p style={{ marginBottom: "20px" }}>Max bets: {maxTimes} times</p>
-        </React.Fragment>
-      )}
+      <ShowIf condition={approved && isConnected}>
+        <p>Total bets: </p>
+        <input
+          value={times}
+          onChange={onChangeTimes}
+          disabled={loading || isConnecting}
+        />
+        <p style={{ marginBottom: "20px" }}>Max bets: {maxTimes} times</p>
+      </ShowIf>
 
       <button
         disabled={loading || isDisconnected || +times <= 0 || isConnecting}
         onClick={approved ? onPlaceBets : onApproved}
       >
-        {text}
+        <ShowIf
+          condition={allowance >= totalBet || isDisconnected || isConnecting}
+        >
+          {loadingBet ? "Betting..." : "Place Bets"}
+        </ShowIf>
+        <ShowIf condition={allowance < totalBet && isConnected}>
+          {loadingApprove ? "Approving..." : "Approve"}
+        </ShowIf>
       </button>
     </div>
   );

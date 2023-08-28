@@ -1,20 +1,39 @@
-import { useEffect, useState } from "react";
 import { useContractRead, useContractWrite, useNetwork } from "wagmi";
 import { useSnackbar } from "notistack";
 import { waitForTransaction, readContract } from "@wagmi/core";
 
 import TOKEN from "@/artifacts/token.json";
 import LOTTERY from "@/artifacts/lottery.json";
+import { useEffect, useState } from "react";
 
 const TOKEN_CONTRACT = process.env.NEXT_PUBLIC_TOKEN_CONTRACT;
 const LOTTERY_CONTRACT = process.env.NEXT_PUBLIC_LOTTERY_CONTRACT;
 
+interface ContractData {
+  data?: bigint;
+}
+
 export function useBet(address?: string) {
-  const [betPrice, setBetPrice] = useState<bigint>();
-  const [betFee, setBetFee] = useState<bigint>();
+  const [totalBet, setTotalBet] = useState<bigint>(BigInt(1));
 
   const { enqueueSnackbar } = useSnackbar();
   const { chain } = useNetwork();
+
+  const betPrice = useContractRead({
+    address: LOTTERY_CONTRACT as `0x${string}`,
+    abi: LOTTERY.abi as any,
+    functionName: "betPrice",
+    args: [],
+    watch: true,
+  });
+
+  const betFee = useContractRead({
+    address: LOTTERY_CONTRACT as `0x${string}`,
+    abi: LOTTERY.abi as any,
+    functionName: "betFee",
+    args: [],
+    watch: true,
+  });
 
   const onError = (error: any) => {
     enqueueSnackbar({
@@ -66,7 +85,7 @@ export function useBet(address?: string) {
     address: TOKEN_CONTRACT as `0x${string}`,
     abi: TOKEN.abi,
     functionName: "approve",
-    args: [LOTTERY_CONTRACT, (betFee ?? BigInt(0)) + (betPrice ?? BigInt(0))],
+    args: [LOTTERY_CONTRACT, totalBet],
     onError,
     onSuccess,
   });
@@ -84,42 +103,32 @@ export function useBet(address?: string) {
     });
 
     const allowanceBN = allowance as unknown as bigint;
-    const totalBet = betPrice + betFee;
 
     if (cb) cb(allowanceBN, totalBet);
   };
 
-  const betPriceData = useContractRead({
-    address: LOTTERY_CONTRACT as `0x${string}`,
-    abi: LOTTERY.abi as any,
-    functionName: "betPrice",
-    args: [],
-  });
-
-  const betFeeData = useContractRead({
-    address: LOTTERY_CONTRACT as `0x${string}`,
-    abi: LOTTERY.abi as any,
-    functionName: "betFee",
-    args: [],
+  const allowance = useContractRead({
+    address: TOKEN_CONTRACT as `0x${string}`,
+    abi: TOKEN.abi as any,
+    functionName: "allowance",
+    args: [address, LOTTERY_CONTRACT],
+    watch: true,
   });
 
   useEffect(() => {
-    if (betPriceData?.data) {
-      setBetPrice(betPriceData.data as unknown as bigint);
-    }
-
-    if (betFeeData?.data) {
-      setBetFee(betFeeData.data as unknown as bigint);
-    }
-  }, [betPriceData, betFeeData]);
+    const fee = betFee as ContractData;
+    const price = betPrice as ContractData;
+    const total = (fee?.data ?? BigInt(0)) + (price?.data ?? BigInt(0));
+    setTotalBet(total);
+  }, [betFee, betPrice]);
 
   return {
     purchaseTokens,
     bet,
     betMany,
-    betFee,
-    betPrice,
     approve,
+    totalBet,
     checkAllowance,
+    allowance: (allowance as ContractData)?.data ?? BigInt(0),
   };
 }
