@@ -24,6 +24,7 @@ export default function PlaceBets() {
 
   useEffect(() => {
     if (isDisconnected) return;
+    if (totalBet <= 0) return;
     const maxTimes = allowance / totalBet;
     setApproved(allowance >= totalBet);
     setMaxTimes(maxTimes.toString());
