@@ -18,7 +18,6 @@ export function AdminBalance(props: Props) {
 
   const [approved, setApproved] = useState<boolean>(false);
   const [text, setText] = useState<string>("Return Token");
-  const [adminBalance, setAdminBalance] = useState<bigint>(BigInt(0));
   const [amount, setAmount] = useState<string>("0");
   const [amountBN, setAmountBN] = useState<bigint>(BigInt(0));
 
@@ -61,13 +60,9 @@ export function AdminBalance(props: Props) {
     await onReturn(amountBN, () => {
       setAmountBN(BigInt(0));
       setAmount("0");
-      setAdminBalance((balance) => balance - amountBN);
     });
   };
 
-  useEffect(() => {
-    setAdminBalance(balance);
-  }, [balance]);
 
   const onMouseLeave = () => {
     if (ratio <= 0) return;
@@ -81,7 +76,7 @@ export function AdminBalance(props: Props) {
   return (
     <div className={styles.container}>
       <p className={styles.title}>Admin balance</p>
-      <p>Token Amount: {formatEther(adminBalance)}</p>
+      <p>Token Amount: {formatEther(balance)}</p>
       <input
         value={amount}
         onChange={onChange}
@@ -89,7 +84,7 @@ export function AdminBalance(props: Props) {
         onMouseLeave={onMouseLeave}
       />
       <button
-        disabled={loading || adminBalance <= 0}
+        disabled={loading || balance <= 0}
         onClick={approved ? onWithdrawToken : () => onApprove(amountBN)}
       >
         {text}
