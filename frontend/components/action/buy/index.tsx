@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useAccount, useBalance } from "wagmi";
 import { formatEther, parseEther } from "viem";
-import { useBuy } from "@/hooks/use-buy.hook";
+import { useLottery } from "@/hooks/use-lottery.hook";
 
 import styles from "./buy.module.css";
 
@@ -13,7 +13,7 @@ export function BuyToken() {
   const [loading, setLoading] = useState<boolean>(false);
 
   const { address, isDisconnected, isConnecting } = useAccount();
-  const { purchaseTokens, purchaseRatio } = useBuy();
+  const { purchaseTokens, purchaseRatio } = useLottery();
   const { data } = useBalance({ address });
   const { writeAsync } = purchaseTokens;
 

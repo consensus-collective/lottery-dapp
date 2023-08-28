@@ -1,13 +1,12 @@
 import React, { useState } from "react";
-import { useAdmin } from "@/hooks/use-admin.hook";
 import { LotteryState } from "./lottery-state";
 import { ClosingTime } from "./closing-time";
 import { OwnerPool } from "./owner-pool";
 import { AdminBalance } from "./admin-balance";
+import { useToken } from "@/hooks/use-token.hook";
+import { useLottery } from "@/hooks/use-lottery.hook";
 
 import styles from "./admin.module.css";
-
-const LOTTERY_CONTRACT = process.env.NEXT_PUBLIC_LOTTERY_CONTRACT;
 
 interface Loading {
   openBets: boolean;
@@ -25,9 +24,7 @@ export function Admin() {
   });
 
   const {
-    approve,
-    allowance,
-    balance,
+    contract,
     betsOpen,
     openBets,
     ownerPool,
@@ -36,7 +33,9 @@ export function Admin() {
     returnTokens,
     purchaseRatio,
     closeLottery,
-  } = useAdmin();
+  } = useLottery();
+
+  const { balance, approve, allowance } = useToken(contract);
 
   const { writeAsync: writeOpen } = openBets;
   const { writeAsync: writeOwnerWithdraw } = ownerWithdraw;
@@ -85,7 +84,7 @@ export function Admin() {
     setLoading({ ...loading, return: true });
 
     try {
-      await writeApprove({ args: [LOTTERY_CONTRACT, amount] });
+      await writeApprove({ args: [contract, amount] });
     } catch {
       // ignore
     } finally {

@@ -1,26 +1,76 @@
-import {
-  useAccount,
-  useContractRead,
-  useContractWrite,
-  useNetwork,
-} from "wagmi";
+import { useEffect, useState } from "react";
+import { useContractRead, useContractWrite, useNetwork } from "wagmi";
 import { useSnackbar } from "notistack";
 import { waitForTransaction } from "@wagmi/core";
 
-import TOKEN from "@/artifacts/token.json";
 import LOTTERY from "@/artifacts/lottery.json";
 
-const TOKEN_CONTRACT = process.env.NEXT_PUBLIC_TOKEN_CONTRACT;
 const LOTTERY_CONTRACT = process.env.NEXT_PUBLIC_LOTTERY_CONTRACT;
 
 interface ContractData {
   data?: bigint;
 }
 
-export function useAdmin() {
+export function useLottery() {
+  const [totalBet, setTotalBet] = useState<bigint>(BigInt(0));
+
   const { enqueueSnackbar } = useSnackbar();
   const { chain } = useNetwork();
-  const { address } = useAccount();
+
+  const betPrice = useContractRead({
+    address: LOTTERY_CONTRACT as `0x${string}`,
+    abi: LOTTERY.abi as any,
+    functionName: "betPrice",
+    args: [],
+    watch: true,
+  });
+
+  const betFee = useContractRead({
+    address: LOTTERY_CONTRACT as `0x${string}`,
+    abi: LOTTERY.abi as any,
+    functionName: "betFee",
+    args: [],
+    watch: true,
+  });
+
+  const betsOpen = useContractRead({
+    address: LOTTERY_CONTRACT as `0x${string}`,
+    abi: LOTTERY.abi,
+    functionName: "betsOpen",
+    args: [],
+    watch: true,
+  });
+
+  const ownerPool = useContractRead({
+    address: LOTTERY_CONTRACT as `0x${string}`,
+    abi: LOTTERY.abi,
+    functionName: "ownerPool",
+    args: [],
+    watch: true,
+  });
+
+  const betsClosingTime = useContractRead({
+    address: LOTTERY_CONTRACT as `0x${string}`,
+    abi: LOTTERY.abi,
+    functionName: "betsClosingTime",
+    args: [],
+    watch: true,
+  });
+
+  const purchaseRatio = useContractRead({
+    address: LOTTERY_CONTRACT as `0x${string}`,
+    abi: LOTTERY.abi as any,
+    functionName: "purchaseRatio",
+    args: [],
+    watch: true,
+  });
+
+  const owner = useContractRead({
+    address: LOTTERY_CONTRACT as `0x${string}`,
+    abi: LOTTERY.abi as any,
+    functionName: "owner",
+    args: [],
+  });
 
   const onError = (error: any) => {
     enqueueSnackbar({
@@ -68,14 +118,6 @@ export function useAdmin() {
     onSuccess,
   });
 
-  const approve = useContractWrite({
-    address: TOKEN_CONTRACT as `0x${string}`,
-    abi: TOKEN.abi,
-    functionName: "approve",
-    onError,
-    onSuccess,
-  });
-
   const returnTokens = useContractWrite({
     address: LOTTERY_CONTRACT as `0x${string}`,
     abi: LOTTERY.abi,
@@ -84,65 +126,51 @@ export function useAdmin() {
     onSuccess,
   });
 
-  const betsOpen = useContractRead({
+  const purchaseTokens = useContractWrite({
     address: LOTTERY_CONTRACT as `0x${string}`,
     abi: LOTTERY.abi,
-    functionName: "betsOpen",
-    args: [],
-    watch: true,
+    functionName: "purchaseTokens",
+    onError,
+    onSuccess,
   });
 
-  const ownerPool = useContractRead({
+  const bet = useContractWrite({
     address: LOTTERY_CONTRACT as `0x${string}`,
     abi: LOTTERY.abi,
-    functionName: "ownerPool",
-    args: [],
-    watch: true,
+    functionName: "bet",
+    onError,
+    onSuccess,
   });
 
-  const betsClosingTime = useContractRead({
+  const betMany = useContractWrite({
     address: LOTTERY_CONTRACT as `0x${string}`,
     abi: LOTTERY.abi,
-    functionName: "betsClosingTime",
-    args: [],
-    watch: true,
+    functionName: "betMany",
+    onError,
+    onSuccess,
   });
 
-  const balanceOf = useContractRead({
-    address: TOKEN_CONTRACT as `0x${string}`,
-    abi: TOKEN.abi,
-    functionName: "balanceOf",
-    args: [address],
-    watch: true,
-  });
-
-  const purchaseRatio = useContractRead({
-    address: LOTTERY_CONTRACT as `0x${string}`,
-    abi: LOTTERY.abi as any,
-    functionName: "purchaseRatio",
-    args: [],
-    watch: true,
-  });
-
-  const allowance = useContractRead({
-    address: TOKEN_CONTRACT as `0x${string}`,
-    abi: TOKEN.abi as any,
-    functionName: "allowance",
-    args: [address, LOTTERY_CONTRACT],
-    watch: true,
-  });
+  useEffect(() => {
+    const fee = betFee as ContractData;
+    const price = betPrice as ContractData;
+    const total = (fee?.data ?? BigInt(0)) + (price?.data ?? BigInt(0));
+    setTotalBet(total);
+  }, [betFee, betPrice]);
 
   return {
-    approve,
+    contract: LOTTERY_CONTRACT,
+    bet,
+    betMany,
     openBets,
     ownerWithdraw,
     closeLottery,
     returnTokens,
+    purchaseTokens,
+    totalBet,
     betsOpen: Boolean(betsOpen?.data),
     ownerPool: (ownerPool as ContractData)?.data ?? BigInt(0),
     betsClosingTime: (betsClosingTime as ContractData)?.data ?? BigInt(0),
-    balance: (balanceOf as ContractData)?.data ?? BigInt(0),
     purchaseRatio: (purchaseRatio as ContractData)?.data ?? BigInt(0),
-    allowance: (allowance as ContractData)?.data ?? BigInt(0),
+    owner: owner?.data ?? "",
   };
 }

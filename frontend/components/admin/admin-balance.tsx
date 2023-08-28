@@ -63,7 +63,6 @@ export function AdminBalance(props: Props) {
     });
   };
 
-
   const onMouseLeave = () => {
     if (ratio <= 0) return;
     if (amountBN <= 0) return;

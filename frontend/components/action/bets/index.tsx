@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useAccount } from "wagmi";
-import { useBet } from "@/hooks/use-bet.hook";
+import { useLottery } from "@/hooks/use-lottery.hook";
+import { useToken } from "@/hooks/use-token.hook";
 
 import ShowIf from "@/components/common/show-if";
 
@@ -13,8 +14,9 @@ export default function PlaceBets() {
   const [times, setTimes] = useState<string>("1");
   const [maxTimes, setMaxTimes] = useState<string>("1");
 
-  const { address, isDisconnected, isConnecting, isConnected } = useAccount();
-  const { bet, betMany, allowance, approve, totalBet } = useBet(address);
+  const { isDisconnected, isConnecting, isConnected } = useAccount();
+  const { bet, betMany, totalBet, contract } = useLottery();
+  const { allowance, approve } = useToken(contract);
 
   const { writeAsync: writeBet } = bet;
   const { writeAsync: writeBetMany } = betMany;
@@ -53,7 +55,7 @@ export default function PlaceBets() {
     setLoadingApprove(true);
 
     try {
-      await writeApprove();
+      await writeApprove({ args: [contract, totalBet] });
     } catch {
       // ignore
     } finally {
