@@ -65,6 +65,7 @@ export function BurnToken() {
 
     setEthAmountBN(ethAmountBN);
     setEthAmount(formatEther(ethAmountBN));
+    setTokenAmountBN(tokenAmountBN);
     setAmount(tokenAmount as `${number}`);
   };
 
