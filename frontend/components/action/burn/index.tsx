@@ -77,6 +77,7 @@ export function BurnToken() {
       // ignore
     } finally {
       setLoadingApprove(false);
+      setApproved(true);
     }
   };
 
