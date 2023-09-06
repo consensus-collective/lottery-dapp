@@ -37,7 +37,7 @@ export function BurnToken() {
     setLoading(true);
 
     try {
-      await writeReturnTokens({ value: tokenAmountBN });
+      await writeReturnTokens({args: [tokenAmountBN]});
 
       setAmount("0");
       setEthAmountBN(BigInt(0));
