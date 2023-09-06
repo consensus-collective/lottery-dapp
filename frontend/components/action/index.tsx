@@ -1,4 +1,6 @@
 import { BuyToken } from "./buy";
+import { BurnToken } from "./burn";
+import { ClaimPrize } from "./claimPrize";
 import { Timer } from "./timer";
 import { useAccount } from "wagmi";
 import { useLottery } from "@/hooks/use-lottery.hook";
@@ -12,7 +14,7 @@ import styles from "./action.module.css";
 const PlaceBets = dynamic(() => import("./bets"), { ssr: false });
 
 export default function Action() {
-  const { isDisconnected } = useAccount();
+  const { address, isDisconnected } = useAccount();
   const { contract, betsOpen } = useLottery();
   const { balance } = useToken(contract);
 
@@ -25,6 +27,14 @@ export default function Action() {
         <BuyToken />
         <ShowIf condition={(betsOpen && balance > 0) || isDisconnected}>
           <PlaceBets />
+        </ShowIf>
+      </div>
+      <div className={styles.prize_container}>
+        <ShowIf condition={(betsOpen && balance > 0) || isDisconnected}>
+          <BurnToken />
+        </ShowIf>
+        <ShowIf condition={(!betsOpen && balance > 0) || isDisconnected}>
+          <ClaimPrize address={address as `0x${string}`}/>
         </ShowIf>
       </div>
     </div>
