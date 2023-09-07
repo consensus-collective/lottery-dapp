@@ -30,9 +30,11 @@ export default function Action() {
         </ShowIf>
       </div>
       <div className={styles.prize_container}>
-        <ShowIf condition={(betsOpen && balance > 0) || isDisconnected}>
+        <ShowIf condition={(balance > 0) || isDisconnected}>
           <BurnToken />
         </ShowIf>
+      </div>
+      <div className={styles.prize_container}>
         <ShowIf condition={(!betsOpen && balance > 0) || isDisconnected}>
           <ClaimPrize address={address as `0x${string}`}/>
         </ShowIf>

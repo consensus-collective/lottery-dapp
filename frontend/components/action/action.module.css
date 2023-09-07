@@ -19,6 +19,14 @@
   align-items: flex-end;
 }
 
+.prize_container {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-evenly;
+  align-content: center;
+  align-items: flex-end;
+}
+
 .message_container {
   margin-top: 20px;
   text-align: center;

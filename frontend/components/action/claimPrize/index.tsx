@@ -42,7 +42,10 @@ export function ClaimPrize(params: { address: `0x${string}` }) {
     args: [params.address],
   });
 
-  const prize = typeof data === "number" ? data : "0";
+  console.log(`DATA IS: ${data}`);
+  console.log(`TYPEOF DATA IS: ${typeof data}`);
+
+  const prize = typeof data === "bigint" ? data : "0";
 
   const onClaimPrize = async () => {
     setLoading(true);
@@ -69,7 +72,7 @@ export function ClaimPrize(params: { address: `0x${string}` }) {
   if (prize) {
     return (
       <div className={styles.container}>
-        <p>Prize amount: {prize}</p>
+        <p>Prize amount: {prize as `${number}`}</p>
         <button
           disabled={loading || isDisconnected || isConnecting}
           onClick={onClaimPrize}
