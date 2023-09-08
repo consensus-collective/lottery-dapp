@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useContractRead, useContractWrite, useNetwork } from "wagmi";
+import { useContractRead, useContractWrite, useNetwork, useWalletClient } from "wagmi";
 import { useSnackbar } from "notistack";
 import { waitForTransaction } from "@wagmi/core";
 import { ExplorerURL } from "@/components/common/explorer-url";
@@ -14,6 +14,7 @@ interface ContractData {
 
 export function useLottery() {
   const [totalBet, setTotalBet] = useState<bigint>(BigInt(0));
+  const { data: walletClient, isError, isLoading } = useWalletClient();
 
   const { enqueueSnackbar } = useSnackbar();
   const { chain } = useNetwork();
@@ -152,6 +153,14 @@ export function useLottery() {
     onSuccess,
   });
 
+  const prizeWithdraw = useContractWrite({
+    address: LOTTERY_CONTRACT as `0x${string}`,
+    abi: LOTTERY.abi,
+    functionName: "prizeWithdraw",
+    onError,
+    onSuccess,
+  });
+
   useEffect(() => {
     const fee = betFee as ContractData;
     const price = betPrice as ContractData;
@@ -169,6 +178,7 @@ export function useLottery() {
     returnTokens,
     purchaseTokens,
     totalBet,
+    prizeWithdraw,
     betsOpen: Boolean(betsOpen?.data),
     ownerPool: (ownerPool as ContractData)?.data ?? BigInt(0),
     betsClosingTime: (betsClosingTime as ContractData)?.data ?? BigInt(0),
